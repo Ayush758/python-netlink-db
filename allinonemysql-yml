@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-node
+  labels:
+    app: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - name: mysql-node
+        image: mysql:5.7
+        imagePullPolicy: Never
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: flaskapi-secrets
+              key: db_root_password
+        ports:
+        - containerPort: 3306
+          name: mysql-node
+        volumeMounts:
+          - name: mysqlpvvolumeayu  # Corrected volume name
+            mountPath: /var/lib/mysql
+      volumes:
+        - name: mysqlpvvolumeayu
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim-ayush
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc-ayush
+  labels:
+    app: db
+spec:
+  ports:
+  - port: 3306
+    targetPort: mysql-node
+    protocol: TCP
+  selector:
+    app: db
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysqlpvvolumeayu
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim-ayush
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

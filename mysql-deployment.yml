@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysqldbaunde
+  labels:
+    app: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - name: mysqldbaunde
+        image: mysql
+        imagePullPolicy: Never  # Assuming the MySQL image is locally available; adjust if needed
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: flaskapi-secrets
+              key: db_root_password
+        ports:
+        - containerPort: 3306
+          name: mysqldbaunde
+        volumeMounts:
+          - name: mysql-persistent-storage-ayush
+            mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-persistent-storage-ayush
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim-ayush
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc-ayush
+  labels:
+    app: db
+spec:
+  ports:
+  - port: 3306  # Port on which the Service will listen
+    targetPort: mysqldbaunde  # Port on which the pods are listening
+    protocol: TCP
+  selector:
+    app: db
+
